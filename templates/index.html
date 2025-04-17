@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Assistente de Planejamento Diário</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 0 auto;
+            padding: 20px;
+            line-height: 1.6;
+        }
+        .container {
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+        textarea {
+            width: 100%;
+            height: 120px;
+            padding: 10px;
+            border-radius: 5px;
+            border: 1px solid #ccc;
+        }
+        button {
+            padding: 10px 15px;
+            background-color: #4CAF50;
+            color: white;
+            border: none;
+            border-radius: 5px;
+            cursor: pointer;
+        }
+        button:hover {
+            background-color: #45a049;
+        }
+        #response {
+            background-color: #f9f9f9;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+        }
+        .loading {
+            display: none;
+            color: #666;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>Assistente de Planejamento Diário</h1>
+        <p>Descreva seus compromissos, tarefas e objetivos para hoje:</p>
+        
+        <textarea id="userInput" placeholder="Ex: Tenho reunião às 10h, preciso terminar o relatório até as 15h, quero fazer exercícios à noite..."></textarea>
+        
+        <button id="generateBtn">Gerar Plano</button>
+        
+        <div class="loading" id="loading">Gerando seu plano personalizado...</div>
+        
+        <div id="response"></div>
+    </div>
+
+    <script>
+        document.getElementById('generateBtn').addEventListener('click', async () => {
+            const userInput = document.getElementById('userInput').value;
+            const responseDiv = document.getElementById('response');
+            const loadingDiv = document.getElementById('loading');
+            
+            if (!userInput) {
+                responseDiv.innerHTML = '<p style="color: red;">Por favor, insira suas informações para planejamento.</p>';
+                return;
+            }
+            
+            responseDiv.innerHTML = '';
+            loadingDiv.style.display = 'block';
+            
+            try {
+                const response = await fetch('/plan', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ input: userInput })
+                });
+                
+                const data = await response.json();
+                
+                if (data.error) {
+                    responseDiv.innerHTML = `<p style="color: red;">Erro: ${data.error}</p>`;
+                } else {
+                    responseDiv.innerHTML = `<h3>Seu Plano Diário:</h3><p>${data.response.replace(/\n/g, '<br>')}</p>`;
+                }
+            } catch (error) {
+                responseDiv.innerHTML = `<p style="color: red;">Erro ao conectar com o servidor: ${error.message}</p>`;
+            } finally {
+                loadingDiv.style.display = 'none';
+            }
+        });
+    </script>
+</body>
+</html>
