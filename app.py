@@ -1,6 +1,7 @@
 from flask import Flask, render_template, request, jsonify
 from openai import OpenAI
 import os
+import re
 from dotenv import load_dotenv
 load_dotenv()
 app = Flask(__name__)
@@ -15,6 +16,12 @@ client = OpenAI(
 def index():
     return render_template('index.html')
 
+def extract_plan(text):
+    match = re.search(r'\*\*Plano Diário(.*)', text, re.DOTALL)
+    if match:
+        return match.group(1).strip()
+    return text
+
 @app.route('/plan', methods=['POST'])
 def generate_plan():
     data = request.json
@@ -28,7 +35,7 @@ def generate_plan():
         messages = [
             {
                 "role": "system",
-                "content": "Você é um assistente de planejamento diário especializado. Ajude o usuário a criar um plano eficiente para o dia, considerando produtividade, equilíbrio vida-trabalho e metas pessoais. Seja conciso e organizado."
+                "content": "Você é um assistente de planejamento diário especializado. Ajude o usuário a criar um plano eficiente para o dia, considerando produtividade, equilíbrio vida-trabalho e metas pessoais. Seja conciso e organizado. Forneça apenas o plano final em português"
             },
             {
                 "role": "user",
@@ -45,8 +52,9 @@ def generate_plan():
             stream=False
         )
         
-        response = completion.choices[0].message.content
-        return jsonify({'response': response})
+        raw_response = completion.choices[0].message.content
+        clean_response = extract_plan(raw_response)
+        return jsonify({'response': clean_response})
     
     except Exception as e:
         return jsonify({'error': str(e)}), 500
